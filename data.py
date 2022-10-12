@@ -5,7 +5,7 @@ from einops import rearrange
 import numpy as np
 import os
 
-BATCH_SIZE = 8
+BATCH_SIZE = 1
 
 def row_processor(row):
     data = np.array(row[1:], np.float64)
@@ -30,7 +30,7 @@ def build_dataloaders():
         dataloaders[set] = DataLoader(
             dataset=build_datapipes(set),
             batch_size=BATCH_SIZE,
-            num_workers=2
+            num_workers=1
         )
     return dataloaders
 
@@ -38,12 +38,12 @@ if __name__ == '__main__':
 
     dataloaders = build_dataloaders()
 
-    first = next(iter(dataloaders['train']))
-    labels, features = first['label'], first['data']
-    print(f"Labels batch shape: {labels.size()}")
-    print(f"Features batch shape: {features.size()}")
+    # first = next(iter(dataloaders['val']))
+    # labels, features = first['label'], first['data']
+    # print(f"Labels batch shape: {labels.size()}")
+    # print(f"Features batch shape: {features.size()}")
 
-    # n_sample = 0
-    # for row in iter(dl):
-    #     n_sample += 1
-    # print(f'n_sample = {n_sample}')
+    n_sample = 0
+    for row in iter(dataloaders['test']):
+        n_sample += 1
+    print(f'n_sample = {n_sample}')
