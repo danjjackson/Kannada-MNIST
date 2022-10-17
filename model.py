@@ -1,4 +1,3 @@
-import torch
 import torch.nn as nn
 from types import SimpleNamespace
 
@@ -11,18 +10,18 @@ act_fn_by_name = {
 
 class ResBlock(nn.Module):
 
-    def __init__(self, c_in, act_fn, sub_sample=False, c_out=-1):
+    def __init__(self, c_in, act_fn, subsample=False, c_out=-1):
         
         super().__init__()
         
-        if not sub_sample:
+        if not subsample:
             c_out=c_in
         
         # Network representing F
         self.net = nn.Sequential(
             nn.BatchNorm2d(c_in),
             act_fn(),
-            nn.Conv2d(c_in, c_out, kernel_size=3, padding=1, stride=1 if not sub_sample else 2, bias=False),
+            nn.Conv2d(c_in, c_out, kernel_size=3, padding=1, stride=1 if not subsample else 2, bias=False),
             nn.BatchNorm2d(c_out),
             act_fn(),
             nn.Conv2d(c_out, c_out, kernel_size=3, padding=1, bias=False)
@@ -33,7 +32,7 @@ class ResBlock(nn.Module):
             nn.BatchNorm2d(c_in),
             act_fn(),
             nn.Conv2d(c_in, c_out, kernel_size=1, stride=2, bias=False)
-        ) if sub_sample else None
+        ) if subsample else None
 
     def forward(self, x):
         z = self.net(x)
@@ -54,14 +53,14 @@ class ResNet(nn.Module):
         ):
         """
         Inputs:
-            num_classes - Number of classification outputs (10 for CIFAR10)
+            num_classes - Number of classification outputs (10 for MNIST)
             num_blocks - List with the number of ResNet blocks to use. The first block of each group uses downsampling, except the first.
             c_hidden - List with the hidden dimensionalities in the different blocks. Usually multiplied by 2 the deeper we go.
             act_fn_name - Name of the activation function to use, looked up in "act_fn_by_name"
         """
 
         super().__init__()
-        
+
         self.hparams = SimpleNamespace(
             num_classes=num_classes,
             c_hidden=c_hidden,
@@ -78,8 +77,9 @@ class ResNet(nn.Module):
         c_hidden = self.hparams.c_hidden
 
         # A first convolution on the original image to scale up the channel size
+
         self.input_net = nn.Sequential(
-            nn.Conv2d(3, c_hidden[0], kernel_size=3, padding=1, bias=False),
+            nn.Conv2d(1, c_hidden[0], kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(c_hidden[0]),
             self.hparams.act_fn()
         )
@@ -90,7 +90,7 @@ class ResNet(nn.Module):
             for bc in range(block_count):
                 subsample = (bc == 0 and block_idx > 0) # Subsample the first block of each group, except the very first one.
                 blocks.append(
-                    self.hparams.block_class(
+                    ResBlock(
                         c_in=c_hidden[block_idx if not subsample else (block_idx-1)],
                         act_fn=self.hparams.act_fn, 
                         subsample=subsample,
