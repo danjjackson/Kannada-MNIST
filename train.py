@@ -6,32 +6,27 @@ import pandas as pd
 import numpy as np
 
 import argparse
-
-from model import ResNet
+from utils import create_model
 from data import build_dataloaders
 from tqdm import tqdm
 
 from torch.utils.tensorboard import SummaryWriter
 
-# default `log_dir` is "runs" - we'll be more specific here
+device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
 writer = SummaryWriter('runs/Kannada_mnist_experiment_1')
-
-device = torch.device("cpu") if not torch.cuda.is_available() else torch.device("cuda:0")
 
 class Trainer():
     def __init__(
         self, 
+        model_name,
         learning_rate,
         weight_decay,
-        trained_model = None, 
-        **model_kwargs
-        ):
+        batch_size,
+        **model_kwargs):
+
         print(model_kwargs)
-        if not trained_model:
-            self.model = ResNet(**model_kwargs)
-        else:
-            self.model = trained_model
-        self.dataloaders = build_dataloaders()
+        self.model = create_model(model_name, model_kwargs)
+        self.dataloaders = build_dataloaders(batch_size)
         self.loss_module = nn.CrossEntropyLoss()
         self.optimizer = optim.SGD(
             self.model.parameters(), lr=learning_rate, weight_decay=weight_decay)
@@ -97,13 +92,14 @@ def write_predictions(pandas_df, file_path):
     pandas_df.write_csv(file_path)
 
 
-def train_model(args, **model_kwargs):
+def train_model(config, num_epochs):
+    print(config)
 
-    trainer = Trainer(args)
+    trainer = Trainer(**config)
 
     best_loss = np.float('inf')
 
-    for epoch in tqdm(range(args.num_epochs)):
+    for epoch in tqdm(range(num_epochs)):
         train_loss, train_acc = trainer.train_epoch()
         # log the running loss and accuracy
         writer.add_scalar('training loss', train_loss, epoch)
@@ -113,30 +109,21 @@ def train_model(args, **model_kwargs):
 
         if val_loss < best_loss:
             best_loss = val_loss
-            torch.save_dict(trainer.model, 'best_model.h5')
+            # torch.save_state_dict(trainer.model, 'best_model.h5')
 
         writer.add_scalar('validation loss', val_loss, epoch)
         writer.add_scalar('validation accuracy', val_acc, epoch)
 
-    best_model = torch.load_dict('best_model.h5')
+    # best_model = torch.load_dict('best_model.h5')
 
-    best_model_trainer = Trainer(best_model)
+    # best_model_trainer = Trainer(best_model)
 
-    predictions = best_model_trainer.predict()
+    return trainer.model
 
-    write_predictions(predictions)
+def test(model):
+    return
 
 
-
-if __name__ == "__main__":
-
-    args = argparse.ArgumentParser()
-    args.add_argument('num_epochs', default=50)
-    args.add_argument('lr', default=1e-5)
-    args.add_argument('weight_decay', default=1e-5)
-
-    train_model(args)
-        
 
 
 
