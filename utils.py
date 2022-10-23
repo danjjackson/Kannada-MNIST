@@ -36,12 +36,6 @@ def parse_args(cmdline):
         default=5,
         help='Number of epochs to train the model for'
         )
-    parser.add_argument(
-        '--load_model',
-        type=str,
-        default=None,
-        help='The path to the state dict of the model to be loaded'
-    )
     return parser.parse_args(cmdline)
 
 def load_config(filename):
