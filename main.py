@@ -1,24 +1,16 @@
 from utils import *
-from train import train_model, test
+from train import train_model
 import sys
 
 if __name__ == "__main__":
-    # setup_seeds(42)
-    # setup_logging()
-
+    setup_seeds(42)
+    
     args = parse_args(sys.argv[1:])
+    # setup_logging()
     config = load_config(args.config)
 
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
     
-    if args.load_model:
-        trained_model = load_pretrained_model(
-            config,
-            args.model_path,
-            )
-    else:
-        trained_model = train_model(config, args.num_epochs)
-
-    # test(trained_model)
+    train_model(config, args.num_epochs)
     

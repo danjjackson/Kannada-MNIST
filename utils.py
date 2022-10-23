@@ -69,7 +69,9 @@ def load_config(filename):
 
 def create_model(model_name, model_kwargs):
     model_dict = {
-        'ResNet': ResNet
+        'ResNet': ResNet,
+        'SimpleConvNet': SimpleConvNet,
+        'InceptionNet': InceptionNet,
     }
     if model_name in model_dict:
         return model_dict[model_name](**model_kwargs)
